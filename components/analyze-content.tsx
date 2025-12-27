@@ -3,62 +3,82 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { AnalysisResults } from "@/components/analysis-results"
-
-const sampleContent = `BREAKING: New study reveals shocking truth about everyday food! Scientists warn that this common ingredient could be affecting millions. Health experts say you need to know this NOW. Share this with everyone you know before it's too late!`
 
 export function AnalyzeContent() {
   const [content, setContent] = useState("")
-  const [showResults, setShowResults] = useState(false)
-  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [result, setResult] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const handleAnalyze = () => {
+  const handleAnalyze = async () => {
     if (!content.trim()) return
-    setIsAnalyzing(true)
-    // Simulate analysis
-    setTimeout(() => {
-      setIsAnalyzing(false)
-      setShowResults(true)
-    }, 1500)
-  }
 
-  const handleSampleContent = () => {
-    setContent(sampleContent)
-    setShowResults(false)
+    setLoading(true)
+    setError(null)
+    setResult(null)
+
+    try {
+      const res = await fetch("http://localhost:5000/analyze", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ content }),
+      })
+
+      const data = await res.json()
+
+      if (!data.success) {
+        throw new Error(data.message || "Analysis failed")
+      }
+
+      setResult(data.data)
+    } catch (err: any) {
+      setError(err.message || "Something went wrong")
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-4xl font-semibold text-foreground mb-3">Analyze Content</h1>
-        <p className="text-lg text-muted-foreground leading-relaxed">
+        <h1 className="text-4xl font-semibold mb-3">Analyze Content</h1>
+        <p className="text-muted-foreground">
           Paste a message, headline, or post you want to examine
         </p>
       </div>
 
-      {/* Input Section */}
-      <div className="space-y-4">
-        <Textarea
-          value={content}
-          onChange={(e) => {
-            setContent(e.target.value)
-            setShowResults(false)
-          }}
-          placeholder="Paste a message, headline, or social media content here…"
-          className="min-h-[200px] text-base resize-none bg-card"
-        />
-        <div className="flex gap-3">
-          <Button onClick={handleAnalyze} disabled={!content.trim() || isAnalyzing} size="lg" className="px-8">
-            {isAnalyzing ? "Analyzing..." : "Run Analysis"}
-          </Button>
-          <Button onClick={handleSampleContent} variant="outline" size="lg" disabled={isAnalyzing}>
-            Try Sample Content
-          </Button>
-        </div>
-      </div>
+      <Textarea
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
+        placeholder="Paste content here…"
+        className="min-h-[200px]"
+      />
 
-      {/* Results Section */}
-      {showResults && <AnalysisResults content={content} />}
+      <Button onClick={handleAnalyze} disabled={loading}>
+        {loading ? "Analyzing..." : "Run Analysis"}
+      </Button>
+
+      {error && (
+        <div className="text-red-500 font-medium">
+          ❌ {error}
+        </div>
+      )}
+
+      {result && (
+        <div className="mt-6 rounded-xl border bg-card shadow-sm">
+    <div className="border-b px-5 py-3 font-semibold text-lg flex items-center gap-2">
+      🧠 Gemini Analysis
+    </div>
+
+    <div className="px-5 py-4 max-h-[400px] overflow-y-auto">
+      <p className="whitespace-pre-wrap leading-relaxed text-sm text-muted-foreground">
+        {result}
+      </p>
+    </div>
+  </div>
+      )}
     </div>
   )
 }

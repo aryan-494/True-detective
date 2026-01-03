@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
+import ReactMarkdown from "react-markdown";
 
 export function AnalyzeContent() {
   const [content, setContent] = useState("")
@@ -79,9 +80,11 @@ export function AnalyzeContent() {
           </div>
 
           <div className="px-5 py-4 max-h-[400px] overflow-y-auto">
-            <p className="whitespace-pre-wrap leading-relaxed text-sm text-muted-foreground">
-              {result}
-            </p>
+           <div className="prose prose-sm max-w-none text-muted-foreground overflow-y-auto">
+  <ReactMarkdown>
+    {result}
+  </ReactMarkdown>
+</div>
           </div>
         </div>
       )}
